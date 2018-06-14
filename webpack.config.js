@@ -3,7 +3,7 @@ const util = require('./webpack.util')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CleanWebpackPlugin = require('clean-webpack-plugin')
 const OpenBrowserPlugin = require('open-browser-webpack-plugin')
-
+// https://juejin.im/post/5a0c13b3518825329314154d
 const config = {
   entry: util.getEntry('./preview'),
   output: {
@@ -60,4 +60,5 @@ const config = {
     }),
   ],
 }
+config.plugins.push()
 module.exports = config

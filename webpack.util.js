@@ -8,7 +8,7 @@ function getEntry(path) {
   for (const dir of dirList) {
     let path = previewPath + '/' + dir + '/preview.ts'
     if (fs.existsSync(path)) {
-      entry[dir] = path
+      entry[dir] = previewPath + '/' + dir + '/preview'
     }
   }
   return entry
