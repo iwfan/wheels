@@ -13,7 +13,7 @@ interface Events {
     [propName: string] : Array<Listener>
 }
 
-class EventEmitter {
+export default class EventEmitter {
     /**
      * 创建一个plainObject用来存放所有的监听
      * @type {any}
