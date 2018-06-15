@@ -1,9 +1,10 @@
-import { isFunction } from '../tools'
-export default function assert(arg: any, message: string) : never | void {
+import {isFunction} from '../tools'
 
-    const result = isFunction(arg) ? arg.call(undefined) : arg
+export default function assert(arg: any, message: string): never | void {
 
-    if (!result) {
-        throw new Error(message)
-    }
+  const result = isFunction(arg) ? arg.call(undefined) : arg
+
+  if (!result) {
+    throw new Error(message)
+  }
 }
