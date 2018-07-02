@@ -66,7 +66,9 @@ class MyPromise {
       executor.call(undefined, resolve, reject)
     } catch (exception) {
       // 在 executor 里面使用 throw 相当于调用 reject
-      reject(exception)
+      setTimeout(() => {
+        reject(exception)
+      }, 4)
     }
   }
 
