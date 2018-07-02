@@ -66,18 +66,19 @@ class MyPromise {
       executor.call(undefined, resolve, reject)
     } catch (exception) {
       // 在 executor 里面使用 throw 相当于调用 reject
-      setTimeout(() => {
-        reject(exception)
-      }, 4)
+      reject(exception)
     }
   }
 
   // 执行回调队列中的函数
   private execCallbackQueue(queue: Array<Function>): void {
     if (queue && queue.length) {
-      for (const callback of queue) {
-        callback.call(undefined, this.value)
-      }
+      // 异步执行队列中的函数
+      setTimeout(() => {
+        for (const callback of queue) {
+          callback.call(undefined, this.value)
+        }
+      }, 4)
     }
   }
 
@@ -95,30 +96,25 @@ class MyPromise {
   public then(onResolve?: Function, onReject?: Function): MyPromise {
     const then = new MyPromise((resolve: Function, reject: Function) => {
         if (this.status === PromiseStatus.pending) {
-          // 将函数放入队列
+          // 将函数放入队列, 在Promise的状态改变后， 队列中的函数会异步执行
           this.onResolveCallbackQueue.push((onResolve && tools.isFunction(onResolve)) ? () => {
-            // onResolve 必须是异步执行的
-            setTimeout(() => {
-              try {
-                //如果 onFulfilled 或者 onRejected 返回一个值 x ，则运行下面的 Promise 解决过程
-                let x = onResolve.call(undefined, this.value)
-                this.resolvePromise(then, x, resolve, reject)
-              } catch (exception) {
-                // 如果 onFulfilled 或者 onRejected 抛出一个异常 e ，则 promise2 必须拒绝执行，并返回拒因 e
-                reject(exception)
-              }
-            }, 4)
+            try {
+              //如果 onFulfilled 或者 onRejected 返回一个值 x ，则运行下面的 Promise 解决过程
+              let x = onResolve.call(undefined, this.value)
+              this.resolvePromise(then, x, resolve, reject)
+            } catch (exception) {
+              // 如果 onFulfilled 或者 onRejected 抛出一个异常 e ，则 promise2 必须拒绝执行，并返回拒因 e
+              reject(exception)
+            }
           } : () => {resolve(this.value)})
 
           this.onRejectCallbackQueue.push((onReject && tools.isFunction(onReject)) ? () => {
-            setTimeout(() => {
-              try {
-                let x = onReject.call(undefined, this.value)
-                this.resolvePromise(then, x, resolve, reject)
-              } catch (exception) {
-                reject(exception)
-              }
-            }, 4)
+            try {
+              let x = onReject.call(undefined, this.value)
+              this.resolvePromise(then, x, resolve, reject)
+            } catch (exception) {
+              reject(exception)
+            }
           }: () => {reject(this.value)})
 
         } else if (this.status === PromiseStatus.fulfilled) {
