@@ -22,7 +22,7 @@ import assert from '../assert/assert'
 // 记录Promise的三种状态
 enum PromiseStatus { pending, fulfilled, rejected }
 
-class MyPromise {
+class Promise {
   // promise的状态与终值都是私有的， 只能通过 then 方法去获取
   private status: PromiseStatus = PromiseStatus.pending
   private value: any = undefined
@@ -33,14 +33,14 @@ class MyPromise {
 
   constructor(executor: Function) {
     // 必须用new关键字， 不能直接调用
-    assert(this instanceof MyPromise, `MyPromise is a constructor and should be called width "new" keyword'`)
+    assert(this instanceof Promise, `MyPromise is a constructor and should be called width "new" keyword'`)
 
     // 参数必须为可执行的函数
     assert(tools.isFunction(executor),
       `Promise resolver ${executor} is not a function`)
 
     // 参数不能为MyPromise
-    assert(executor !== MyPromise, 'executor can not equals MyPromise')
+    assert(executor !== Promise, 'executor can not equals MyPromise')
 
     // value表示promise的最终值
     let resolve: (value: any) => void = (value: any): void => {
@@ -93,8 +93,8 @@ class MyPromise {
    *  5. then 方法必须返回一个Promise
    * @returns {MyPromise}
    */
-  public then(onResolve?: Function, onReject?: Function): MyPromise {
-    const then = new MyPromise((resolve: Function, reject: Function) => {
+  public then(onResolve?: Function, onReject?: Function): Promise {
+    const then = new Promise((resolve: Function, reject: Function) => {
         if (this.status === PromiseStatus.pending) {
           // 将函数放入队列, 在Promise的状态改变后， 队列中的函数会异步执行
           this.onResolveCallbackQueue.push((onResolve && tools.isFunction(onResolve)) ? () => {
@@ -155,14 +155,14 @@ class MyPromise {
   }
 
   // Promise 解决过程
-  private resolvePromise(promise: MyPromise, x: any, resolve: Function, reject: Function): void {
+  private resolvePromise(promise: Promise, x: any, resolve: Function, reject: Function): void {
     // x 与 promise 相等, 防止循环引用
     if (promise === x) {
       reject(new TypeError('Chaining cycle detected for promise'))
     }
 
     // 如果x为MyPromise, 那么就以x的状态来决定promise的状态
-    if (x instanceof MyPromise) {
+    if (x instanceof Promise) {
       x.then((value: any) => {
         resolve(value)
       },(reason: any) => {
@@ -217,8 +217,60 @@ class MyPromise {
     }
   }
 
-  static resolve() {
+  // then的一个语法糖
+  public catch (onReject?: Function): Promise {
+    return this.then(undefined, onReject)
+  }
+  // then的另一个语法糖， 总是返回原来的值
+  // 且finally与状态无关
+  public finally (callback?: Function): Promise {
+    return this.then((value: any) => {
+      callback && callback.call(undefined)
+      return value
+    }, (reason: any) => {
+      callback && callback.call(undefined)
+      throw reason
+    })
+  }
+
+  // 返回一个resolve状态的promise
+  static resolve (value: any): Promise {
+    return new Promise((resolve: Function, reject: Function) => {
+      resolve(value)
+    })
+  }
+  // 返回一个reject状态的promise
+  static reject (reason: any): Promise {
+    return new Promise((resolve: Function, reject: Function) => {
+      reject(reason)
+    })
+  }
+  // 由率先改变状态的promise来决定此promise的状态
+  static race (promises: Array<Promise>): Promise {
+    return new Promise((resolve: Function, reject: Function) => {
+      for (const promise of promises) {
+        promise.then(resolve, reject)
+      }
+    })
+  }
+  // 所有promise成功， 此promise成功
+  // 一个失败便失败
+  static all (promises: Array<Promise>) {
+    let resolvedPromiseCount = 0
+    let resolvedPromiseValue: Array<any> = []
+    return new Promise((resolve: Function, reject: Function) => {
+      for (let index = 0; index < promises.length; index++) {
+        let promise: Promise = promises[index]
+        promise.then((value: any) => {
+          resolvedPromiseCount += 1
+          resolvedPromiseValue[index] = value
+          if (resolvedPromiseCount === promises.length) {
+            resolve(resolvedPromiseValue)
+          }
+        }, reject)
+      }
+    })
   }
 }
 
-export default MyPromise
+export default Promise
